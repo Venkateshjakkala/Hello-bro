@@ -1,17 +1,23 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+stages:
+- stage: Test
+  displayName: Chromatic Testing
+  # Job list
+  jobs:
+  - job: Chromatic_Deploy
+    displayName: Install packages and publishes to Chromatic
 
-trigger:
-- main
+    steps:
 
-pool:
-  vmImage: ubuntu-latest
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '12.x'
+      displayName: 'Install Node.js'  
+    - task: Npm@1
+      inputs:
+        command: 'install'
+        workingDir: '$(build.sourcesdirectory)'
 
-variables:
-  buildConfiguration: 'Release'
-
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+    - task: CmdLine@2
+      displayName: Publish to Chromatic
+      inputs:
+        script: npx chromatic --project-token=${CHROMATIC_PROJECT_TOKEN}
