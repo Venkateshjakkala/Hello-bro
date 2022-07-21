@@ -15,3 +15,35 @@ variables:
 steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
+stages:
+- stage: Test
+  displayName: Chromatic Testing
+
+  jobs:
+  - job: Chromatic_Deploy
+    displayName: Install packages and publishes to Chromatic
+    variables:
+      # Sets scoped environment variable to cache packages
+      npm_config_cache: $(Pipeline.Workspace)/.npm 
+    
+    steps:
+      #Installs and configures Node environment
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '12.x'
+      displayName: 'Install Node.js'  
+    - task: Cache@2
+      displayName: Install and cache packages
+      inputs:
+        key: 'npm | "$(Agent.OS)" | package-lock.json'
+        restoreKeys: |
+          npm | "$(Agent.OS)"
+        path: $(npm_config_cache)
+    - script: npm ci
+      condition: ne(variables.CACHE_RESTORED, 'true')
+      
+    - task: CmdLine@2
+      displayName: Publish to Chromatic
+      inputs:
+      
+        script: npx chromatic --project-token=${CHROMATIC_PROJECT_TOKEN}
